@@ -2,526 +2,500 @@
 # VARIABLES / LOCALS / REMOTE STATE
 # ----------------------------------------------------------------------------------------------------------------------
 
-variable "identifier" {
-  description = "The name of the RDS instance, if omitted, Terraform will assign a random, unique identifier"
-  default     = []
+variable "zone_id" {
+  type        = string
+  default     = ""
+  description = "Route53 parent zone ID. If provided (not empty), the module will create sub-domain DNS records for the DB master and replicas"
+}
+
+variable "security_groups" {
   type        = list(string)
-
-}
-
-variable "allocated_storage" {
-  description = "The allocated storage in gigabytes"
-}
-
-variable "max_allocated_storage" {
-  type        = number
-  default     = 0
-  description = "(Optional) When configured, the upper limit to which Amazon RDS can automatically scale the storage of the DB instance. Configuring this will automatically ignore differences to allocated_storage. Must be greater than or equal to allocated_storage or 0 to disable Storage Autoscaling"
-}
-
-variable "storage_type" {
-  description = "One of 'standard' (magnetic), 'gp2' (general purpose SSD), or 'io1' (provisioned IOPS SSD). The default is 'io1' if iops is specified, 'standard' if not. Note that this behaviour is different from the AWS web console, where the default is 'gp2'."
-  default     = "gp2"
-}
-
-variable "storage_encrypted" {
-  description = "Specifies whether the DB instance is encrypted"
-  default     = false
-}
-
-variable "kms_key_id" {
-  description = "The ARN for the KMS encryption key. If creating an encrypted replica, set this to the destination KMS ARN. If storage_encrypted is set to true and kms_key_id is not specified the default KMS key created in your account will be used"
-  default     = ""
-}
-
-variable "replicate_source_db" {
-  description = "Specifies that this resource is a Replicate database, and to use this value as the source database. This correlates to the identifier of another Amazon RDS Database to replicate."
-  default     = ""
-}
-
-variable "snapshot_identifier" {
-  description = "Specifies whether or not to create this database from a snapshot. This correlates to the snapshot ID you'd find in the RDS console, e.g: rds:production-2015-06-26-06-05."
-  default     = ""
-}
-
-variable "license_model" {
-  description = "License model information for this DB instance. Optional, but required for some DB engines, i.e. Oracle SE1"
-  default     = ""
-}
-
-variable "iam_database_authentication_enabled" {
-  description = "Specifies whether or mappings of AWS Identity and Access Management (IAM) accounts to database accounts is enabled"
-  default     = false
-}
-
-variable "engine" {
-  description = "The database engine to use"
-  default     = "postgres"
-}
-
-variable "engine_version" {
-  description = "The engine version to use"
-}
-
-variable "final_snapshot_identifier" {
-  description = "The name of your final DB snapshot when this DB instance is deleted."
-  default     = false
-}
-
-variable "instance_class" {
-  description = "The instance type of the RDS instance"
-}
-
-variable "db_name" {
-  description = "The DB name to create. If omitted, no database is created initially"
-  default     = ""
-}
-
-variable "username" {
-  description = "Username for the master DB user"
-  default     = ""
-}
-
-variable "password" {
-  description = "Password for the master DB user. Note that this may show up in logs, and it will be stored in the state file"
-  default     = ""
-}
-
-variable "port" {
-  description = "The port on which the DB accepts connections"
-  default     = "5432"
-}
-
-variable "vpc_security_group_ids" {
-  type        = list(string)
-  description = "List of VPC security groups to associate"
   default     = []
+  description = "List of security groups to be allowed to connect to the DB instance"
+}
+
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID to create the cluster in (e.g. `vpc-a22222ee`)"
+}
+
+variable "subnets" {
+  type        = list(string)
+  description = "List of VPC subnet IDs"
 }
 
 variable "db_subnet_group_name" {
-  description = "Name of DB subnet group. DB instance will be created in the VPC associated with the DB subnet group. If unspecified, will be created in the default VPC"
+  type        = string
+  default     = null
+  description = "(Optional) A DB subnet group to associate with this DB instance. NOTE: This must match the db_subnet_group_name specified on every aws_rds_cluster_instance in the cluster"
+}
+
+variable "db_cluster_parameter_group_name" {
+  type        = string
+  default     = null
+  description = "(Optional) The name of the DB parameter group to associate with this instance."
+}
+
+variable "cluster_identifier" {
+  type        = string
   default     = ""
+  description = "The RDS Cluster Identifier. Will use generated label ID if not supplied"
 }
 
-variable "parameter_group_name" {
-  description = "Name of the DB parameter group to associate. Setting this automatically disables parameter_group creation"
+variable "snapshot_identifier" {
+  type        = string
   default     = ""
+  description = "Specifies whether or not to create this cluster from a snapshot"
 }
 
-variable "availability_zone" {
-  description = "The Availability Zone of the RDS instance"
+variable "db_name" {
+  type        = string
   default     = ""
+  description = "Database name (default is not to create a database)"
 }
 
-variable "multi_az" {
-  description = "Specifies if the RDS instance is multi-AZ"
-  default     = false
+variable "db_port" {
+  type        = number
+  default     = 5432
+  description = "Database port"
 }
 
-variable "iops" {
-  description = "The amount of provisioned IOPS. Setting this implies a storage_type of 'io1'"
-  default     = 0
-}
-
-variable "publicly_accessible" {
-  description = "Bool to control if instance is publicly accessible"
-  default     = false
-}
-
-variable "enable_iam_s3_import" {
-  description = "Whether to crate and add s3 import IAM role to RDS instance"
-  default     = true
-  type        = bool
-}
-
-variable "monitoring_interval" {
-  description = "The interval, in seconds, between points when Enhanced Monitoring metrics are collected for the DB instance. To disable collecting Enhanced Monitoring metrics, specify 0. The default is 0. Valid Values: 0, 1, 5, 10, 15, 30, 60."
-  default     = 0
-}
-
-variable "monitoring_role_arn" {
-  description = "The ARN for the IAM role that permits RDS to send enhanced monitoring metrics to CloudWatch Logs. Must be specified if monitoring_interval is non-zero."
+variable "admin_user" {
+  type        = string
   default     = ""
+  description = "(Required unless a snapshot_identifier is provided) Username for the master DB user"
 }
 
-variable "monitoring_role_name" {
-  description = "Name of the IAM role which will be created when create_monitoring_role is enabled."
-  default     = "rds-monitoring-role"
+variable "admin_password" {
+  type        = string
+  default     = ""
+  description = "(Required unless a snapshot_identifier is provided) Password for the master DB user"
 }
 
-variable "create_monitoring_role" {
-  description = "Create IAM role with a defined name that permits RDS to send enhanced monitoring metrics to CloudWatch Logs."
-  default     = false
+variable "retention_period" {
+  type        = number
+  default     = 7
+  description = "Number of days to retain backups for"
 }
 
-variable "allow_major_version_upgrade" {
-  description = "Indicates that major version upgrades are allowed. Changing this parameter does not result in an outage and the change is asynchronously applied as soon as possible"
-  default     = false
-}
-
-variable "auto_minor_version_upgrade" {
-  description = "Indicates that minor engine upgrades will be applied automatically to the DB instance during the maintenance window"
-  default     = true
-}
-
-variable "apply_immediately" {
-  description = "Specifies whether any database modifications are applied immediately, or during the next maintenance window"
-  default     = false
+variable "backup_window" {
+  type        = string
+  default     = "07:55-08:25"
+  description = "Daily time range during which the backups happen"
 }
 
 variable "maintenance_window" {
-  description = "The window to perform maintenance in. Syntax: 'ddd:hh24:mi-ddd:hh24:mi'. Eg: 'Mon:00:00-Mon:03:00'"
+  type        = string
+  default     = "sat:03:00-sat:04:00"
+  description = "Weekly time range during which system maintenance can occur, in UTC"
+}
+
+variable "cluster_parameters" {
+  type = list(object({
+    apply_method = string
+    name         = string
+    value        = string
+  }))
+  default     = []
+  description = "List of DB cluster parameters to apply"
+}
+
+variable "instance_parameters" {
+  type = list(object({
+    apply_method = string
+    name         = string
+    value        = string
+  }))
+  default     = []
+  description = "List of DB instance parameters to apply"
+}
+
+variable "cluster_family" {
+  type        = string
+  default     = "aurora-postgresql10"
+  description = "The family of the DB cluster parameter group"
+}
+
+variable "engine" {
+  type        = string
+  default     = "aurora-postgresql"
+  description = "The name of the database engine to be used for this DB cluster. Valid values: `aurora`, `aurora-mysql`, `aurora-postgresql`"
+}
+
+variable "engine_mode" {
+  type        = string
+  default     = "serverless"
+  description = "The database engine mode. Valid values: `parallelquery`, `provisioned`, `serverless`"
+}
+
+variable "engine_version" {
+  type        = string
+  default     = ""
+  description = "The version of the database engine to use. See `aws rds describe-db-engine-versions` "
+}
+
+variable "scaling_configuration" {
+  type = list(object({
+    auto_pause               = bool
+    max_capacity             = number
+    min_capacity             = number
+    seconds_until_auto_pause = number
+    timeout_action           = string
+  }))
+  default     = []
+  description = "List of nested attributes with scaling properties. Only valid when `engine_mode` is set to `serverless`"
+}
+
+variable "timeouts_configuration" {
+  type = list(object({
+    create = string
+    update = string
+    delete = string
+  }))
+  default     = []
+  description = "List of timeout values per action. Only valid actions are `create`, `update` and `delete`"
+}
+
+variable "allowed_cidr_blocks" {
+  type        = list(string)
+  default     = []
+  description = "List of CIDR blocks allowed to access the cluster"
+}
+
+variable "storage_encrypted" {
+  type        = bool
+  description = "Specifies whether the DB cluster is encrypted. The default is `false` for `provisioned` `engine_mode` and `true` for `serverless` `engine_mode`"
+  default     = false
+}
+
+variable "kms_key_arn" {
+  type        = string
+  description = "The ARN for the KMS encryption key. When specifying `kms_key_arn`, `storage_encrypted` needs to be set to `true`"
+  default     = ""
 }
 
 variable "skip_final_snapshot" {
-  description = "Determines whether a final DB snapshot is created before the DB instance is deleted. If true is specified, no DBSnapshot is created. If false is specified, a DB snapshot is created before the DB instance is deleted, using the value from final_snapshot_identifier"
+  type        = bool
+  description = "Determines whether a final DB snapshot is created before the DB cluster is deleted"
   default     = true
 }
 
 variable "copy_tags_to_snapshot" {
-  description = "On delete, copy all Instance tags to the final snapshot (if final_snapshot_identifier is specified)"
+  type        = bool
+  description = "Copy tags to backup snapshots"
   default     = false
-}
-
-variable "backup_retention_period" {
-  description = "The days to retain backups for"
-  default     = 1
-}
-
-variable "backup_window" {
-  description = "The daily time range (in UTC) during which automated backups are created if they are enabled. Example: '09:46-10:16'. Must not overlap with maintenance_window"
-}
-
-# DB subnet group
-variable "subnet_ids" {
-  type        = list(string)
-  description = "A list of VPC subnet IDs"
-  default     = []
-}
-
-# DB parameter group
-variable "family" {
-  description = "The family of the DB parameter group"
-  default     = ""
-}
-
-variable "parameters" {
-  description = "A list of DB parameters (map) to apply"
-  default     = []
-}
-
-# DB parameter group
-variable "major_engine_version" {
-  description = "Specifies the major version of the engine"
-  default     = ""
-}
-
-variable "ingress_sg_cidr" {
-  description = "List of the ingress cidr's to create the security group."
-  default     = []
-  type        = list(string)
-}
-
-variable "egress_sg_cidr" {
-  description = "List of the egress cidr's to create the security group."
-  default     = []
-  type        = list(string)
-}
-
-variable "vpc_id" {
-  description = "VPC to create the security group in."
-  default     = ""
-}
-
-variable "create_db_subnet_group" {
-  description = "Whether to create a database subnet group"
-  default     = true
-}
-
-variable "create_db_parameter_group" {
-  description = "Whether to create a database parameter group"
-  default     = true
-}
-
-variable "create_db_security_group" {
-  description = "Whether to create a database VPC security group"
-  default     = true
-}
-
-variable "create_db_instance" {
-  description = "Whether to create a database instance"
-  default     = true
-}
-
-variable "timezone" {
-  description = "(Optional) Time zone of the DB instance. timezone is currently only supported by Microsoft SQL Server. The timezone can only be set on creation. See MSSQL User Guide for more information."
-  default     = ""
-}
-
-variable "character_set_name" {
-  description = "(Optional) The character set name to use for DB encoding in Oracle instances. This can't be changed. See Oracle Character Sets Supported in Amazon RDS for more information."
-  default     = ""
 }
 
 variable "deletion_protection" {
-  description = "(Optional) If the DB instance should have deletion protection enabled. The database can't be deleted when this value is set to true. The default is false."
+  type        = bool
+  description = "If the DB instance should have deletion protection enabled"
   default     = false
 }
 
-variable "schedule" {
-  description = "(Optional) Which schedule from the instance scheduler to adhere to"
+variable "apply_immediately" {
+  type        = bool
+  description = "Specifies whether any cluster modifications are applied immediately, or during the next maintenance window"
+  default     = true
+}
+
+variable "iam_database_authentication_enabled" {
+  type        = bool
+  description = "Specifies whether or mappings of AWS Identity and Access Management (IAM) accounts to database accounts is enabled"
+  default     = false
+}
+
+variable "replication_source_identifier" {
+  type        = string
+  description = "ARN of a source DB cluster or DB instance if this DB cluster is to be created as a Read Replica"
+  default     = ""
 }
 
 variable "enabled_cloudwatch_logs_exports" {
   type        = list(string)
-  default     = ["postgresql", "upgrade"]
-  description = "(Optional) List of log types to enable for exporting to CloudWatch logs. If omitted, no logs will be exported. Valid values (depending on engine): agent (MSSQL), alert, audit, error, general, listener, slowquery, trace, postgresql (PostgreSQL), upgrade (PostgreSQL)."
+  description = "List of log types to export to cloudwatch. The following log types are supported: audit, error, general, slowquery"
+  default     = []
 }
 
-variable "performance_insights_enabled" {
-  description = "(Optional) Specifies whether Performance Insights are enabled. Defaults to false"
-  default     = false
-  type        = bool
-}
-
-variable "performance_insights_kms_key_id" {
-  description = "(Optional) The ARN for the KMS key to encrypt Performance Insights data. When specifying performance_insights_kms_key_id, performance_insights_enabled needs to be set to true. Once KMS key is set, it can never be changed"
-  default     = ""
+variable "cluster_dns_name" {
   type        = string
+  description = "Name of the cluster CNAME record to create in the parent DNS zone specified by `zone_id`. If left empty, the name will be auto-asigned using the format `master.var.name`"
+  default     = ""
 }
 
-variable "performance_insights_retention_period" {
-  description = "(Optional) The amount of time in days to retain Performance Insights data. Either 7 (7 days) or 731 (2 years). When specifying performance_insights_retention_period, performance_insights_enabled needs to be set to true. Defaults to '7'"
-  default     = 7
+variable "global_cluster_identifier" {
+  type        = string
+  description = "ID of the Aurora global cluster"
+  default     = ""
+}
+
+variable "source_region" {
+  type        = string
+  description = "Source Region of primary cluster, needed when using encrypted storage and region replicas"
+  default     = ""
+}
+
+variable "iam_roles" {
+  type        = list(string)
+  description = "Iam roles for the Aurora cluster"
+  default     = []
+}
+
+variable "backtrack_window" {
   type        = number
+  description = "The target backtrack window, in seconds. Only available for aurora engine currently. Must be between 0 and 259200 (72 hours)"
+  default     = 0
 }
 
-locals {
-  db_subnet_group_name = coalesce(
-    var.db_subnet_group_name,
-    module.db_subnet_group.this_db_subnet_group_id,
-  )
-  enable_create_db_subnet_group = var.db_subnet_group_name == "" ? var.create_db_subnet_group : false
-  parameter_group_name = coalesce(
-    var.parameter_group_name,
-    module.db_parameter_group.this_db_parameter_group_id,
-  )
-  enable_create_db_parameter_group = var.parameter_group_name == "" ? var.create_db_parameter_group : false
-  enable_create_security_group     = var.vpc_id != "" ? var.create_db_security_group : false
+variable "enable_http_endpoint" {
+  type        = bool
+  description = "Enable HTTP endpoint (data API). Only valid when engine_mode is set to serverless"
+  default     = false
+}
+
+variable "vpc_security_group_ids" {
+  type        = list(string)
+  description = "Additional security group IDs to apply to the cluster, in addition to the provisioned default security group with ingress traffic from existing CIDR blocks and existing security groups"
+
+  default = []
 }
 
 # ----------------------------------------------------------------------------------------------------------------------
 # MODULES / RESOURCES
 # ----------------------------------------------------------------------------------------------------------------------
-data "aws_kms_key" "parameter_store_key" {
-  key_id = "alias/parameter_store_key"
-}
 
-module "rds_ssm_param_secret" {
-  enabled        = var.password == "" ? "true" : "false"
-  source         = "git::https://github.com/cloudposse/terraform-aws-ssm-parameter-store?ref=0.1.5"
-  kms_arn        = "alias/parameter_store_key"
-  parameter_read = ["/${local.stage_prefix}/${var.name}-password"]
-}
-
-module "rds_ssm_param_username" {
-  enabled        = var.username == "" ? "true" : "false"
-  source         = "git::https://github.com/cloudposse/terraform-aws-ssm-parameter-store?ref=0.1.5"
-  parameter_read = ["/${local.stage_prefix}/${var.name}-username"]
-}
-
-
-resource "aws_security_group" "this" {
-  count       = local.enable_create_security_group ? 1 : 0
+resource "aws_security_group" "default" {
+  count       = var.create && var.allowed_cidr_blocks != [] ? 1 : 0
   name        = local.module_prefix
-  description = "Allow internal and VPN traffic"
+  description = "Allow inbound traffic from Security Groups and CIDRs"
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port   = var.port
-    to_port     = var.port
-    protocol    = "6"
-    cidr_blocks = var.ingress_sg_cidr
+    from_port       = var.db_port
+    to_port         = var.db_port
+    protocol        = "tcp"
+    security_groups = var.security_groups
+  }
+
+  ingress {
+    from_port   = var.db_port
+    to_port     = var.db_port
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_cidr_blocks
   }
 
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = coalescelist(var.egress_sg_cidr, var.ingress_sg_cidr)
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-  lifecycle {
-    ignore_changes        = [ingress]
-    create_before_destroy = true
+  tags = local.tags
+}
+
+resource "aws_db_subnet_group" "default" {
+  count       = var.create && var.db_subnet_group_name == null ? 1 : 0
+  name        = local.module_prefix
+  description = "Allowed subnets for DB cluster instances"
+  subnet_ids  = var.subnets
+  tags        = local.tags
+}
+
+resource "aws_rds_cluster_parameter_group" "default" {
+  count       = var.create && var.db_cluster_parameter_group_name == null ? 1 : 0
+  name        = local.module_prefix
+  description = "DB cluster parameter group"
+  family      = var.cluster_family
+
+  dynamic "parameter" {
+    for_each = var.cluster_parameters
+    content {
+      apply_method = lookup(parameter.value, "apply_method", null)
+      name         = parameter.value.name
+      value        = parameter.value.value
+    }
   }
+
+  tags = local.tags
 }
 
-module "db_subnet_group" {
-  source        = "./modules/db-subnet-group"
-  create        = local.enable_create_db_subnet_group
-  module_prefix = local.module_prefix
-  subnet_ids    = var.subnet_ids
-  tags          = local.tags
+resource "aws_db_parameter_group" "default" {
+  count       = var.create && var.engine_mode != "serverless" ? 1 : 0
+  name        = local.module_prefix
+  description = "DB instance parameter group"
+  family      = var.cluster_family
+
+  dynamic "parameter" {
+    for_each = var.instance_parameters
+    content {
+      apply_method = lookup(parameter.value, "apply_method", null)
+      name         = parameter.value.name
+      value        = parameter.value.value
+    }
+  }
+
+  tags = local.tags
 }
 
-module "db_parameter_group" {
-  source        = "./modules/db-parameter-group"
-  create        = local.enable_create_db_parameter_group
-  module_prefix = "${local.module_prefix}-${var.engine}-${replace(var.major_engine_version, ".", "-")}"
-  family        = var.family
-  parameters    = var.parameters
-  tags          = local.tags
+module "rds_creds" {
+  source = "git::https://github.com/gravicore/terraform-gravicore-modules.git//aws/parameters?ref=0.20.0"
+  providers = {
+    aws = aws
+  }
+  create = var.create && var.admin_password == "" ? true : false
+
+  namespace   = var.namespace
+  environment = var.environment
+  stage       = var.stage
+  tags        = local.tags
+  parameters = [
+    "/${local.stage_prefix}/${var.name}-password",
+    "/${local.stage_prefix}/${var.name}-username",
+  ]
 }
 
-module "db_instance" {
-  source                = "./modules/db-instance"
-  create                = var.create_db_instance
-  identifier            = var.identifier
-  module_prefix         = local.module_prefix
-  stage_prefix          = local.stage_prefix
-  name                  = var.name
-  delimiter             = var.delimiter
-  engine                = var.engine
-  engine_version        = var.engine_version
-  instance_class        = var.instance_class
-  allocated_storage     = var.allocated_storage
-  max_allocated_storage = var.max_allocated_storage
-  storage_type          = var.storage_type
-  deletion_protection   = var.deletion_protection
-  storage_encrypted     = var.storage_encrypted
-  kms_key_id            = var.kms_key_id
-  license_model         = var.license_model
-  namespace             = var.namespace
-  environment           = var.environment
-  stage                 = var.stage
-  db_name               = var.db_name
-
-
-  username                            = var.username == "" ? module.rds_ssm_param_username.map[format("/%s/${var.name}-username", local.stage_prefix)] : var.username
-  password                            = var.password == "" ? module.rds_ssm_param_secret.map[format("/%s/${var.name}-password", local.stage_prefix)] : var.password
-  port                                = var.port
+resource "aws_rds_cluster" "default" {
+  count                               = var.create ? 1 : 0
+  cluster_identifier                  = local.module_prefix
+  database_name                       = var.db_name
+  master_username                     = coalesce(var.admin_user, lookup(lookup(module.rds_creds.parameters, "/${local.stage_prefix}/${var.name}-username", {}), "value", ""))
+  master_password                     = coalesce(var.admin_password, lookup(lookup(module.rds_creds.parameters, "/${local.stage_prefix}/${var.name}-password", {}), "value", ""))
+  backup_retention_period             = var.retention_period
+  preferred_backup_window             = var.backup_window
+  copy_tags_to_snapshot               = var.copy_tags_to_snapshot
+  final_snapshot_identifier           = var.cluster_identifier == "" ? lower(local.module_prefix) : lower(var.cluster_identifier)
+  skip_final_snapshot                 = var.skip_final_snapshot
+  apply_immediately                   = var.apply_immediately
+  storage_encrypted                   = var.storage_encrypted
+  kms_key_id                          = var.kms_key_arn
+  source_region                       = var.source_region
+  snapshot_identifier                 = var.snapshot_identifier
+  vpc_security_group_ids              = compact(flatten([join("", aws_security_group.default.*.id), var.vpc_security_group_ids]))
+  preferred_maintenance_window        = var.maintenance_window
+  db_subnet_group_name                = coalesce(join("", aws_db_subnet_group.default.*.name), var.db_subnet_group_name)
+  db_cluster_parameter_group_name     = coalesce(join("", aws_rds_cluster_parameter_group.default.*.name), var.db_cluster_parameter_group_name)
   iam_database_authentication_enabled = var.iam_database_authentication_enabled
+  tags                                = local.tags
+  engine                              = var.engine
+  engine_version                      = var.engine_version
+  engine_mode                         = var.engine_mode
+  global_cluster_identifier           = var.global_cluster_identifier
+  iam_roles                           = var.iam_roles
+  backtrack_window                    = var.backtrack_window
+  enable_http_endpoint                = var.engine_mode == "serverless" && var.enable_http_endpoint ? true : false
 
-  replicate_source_db = var.replicate_source_db
+  dynamic "scaling_configuration" {
+    for_each = var.scaling_configuration
+    content {
+      auto_pause               = lookup(scaling_configuration.value, "auto_pause", null)
+      max_capacity             = lookup(scaling_configuration.value, "max_capacity", null)
+      min_capacity             = lookup(scaling_configuration.value, "min_capacity", null)
+      seconds_until_auto_pause = lookup(scaling_configuration.value, "seconds_until_auto_pause", null)
+      timeout_action           = lookup(scaling_configuration.value, "timeout_action", null)
+    }
+  }
 
-  snapshot_identifier                   = var.snapshot_identifier
-  vpc_security_group_ids                = coalescelist(var.vpc_security_group_ids, [aws_security_group.this[0].id])
-  db_subnet_group_name                  = local.db_subnet_group_name
-  parameter_group_name                  = local.parameter_group_name
-  availability_zone                     = var.availability_zone
-  multi_az                              = var.multi_az
-  iops                                  = var.iops
-  publicly_accessible                   = var.publicly_accessible
-  allow_major_version_upgrade           = var.allow_major_version_upgrade
-  auto_minor_version_upgrade            = var.auto_minor_version_upgrade
-  apply_immediately                     = var.apply_immediately
-  maintenance_window                    = var.maintenance_window
-  skip_final_snapshot                   = var.skip_final_snapshot
-  copy_tags_to_snapshot                 = var.copy_tags_to_snapshot
-  final_snapshot_identifier             = var.final_snapshot_identifier
-  enabled_cloudwatch_logs_exports       = var.enabled_cloudwatch_logs_exports
-  performance_insights_enabled          = var.performance_insights_enabled
-  performance_insights_kms_key_id       = var.performance_insights_enabled ? coalesce(var.performance_insights_kms_key_id, var.kms_key_id) : null
-  performance_insights_retention_period = var.performance_insights_enabled ? var.performance_insights_retention_period : null
-  backup_retention_period               = var.backup_retention_period
-  backup_window                         = var.backup_window
-  enable_iam_s3_import                  = var.enable_iam_s3_import
-  monitoring_interval                   = var.monitoring_interval
-  monitoring_role_arn                   = var.monitoring_role_arn
-  monitoring_role_name                  = var.monitoring_role_name
-  create_monitoring_role                = var.create_monitoring_role
-  timezone                              = var.timezone
-  character_set_name                    = var.character_set_name
-  tags                                  = local.tags
-  schedule                              = var.schedule
+  dynamic "timeouts" {
+    for_each = var.timeouts_configuration
+    content {
+      create = lookup(timeouts.value, "create", "120m")
+      update = lookup(timeouts.value, "update", "120m")
+      delete = lookup(timeouts.value, "delete", "120m")
+    }
+  }
+
+  replication_source_identifier   = var.replication_source_identifier
+  enabled_cloudwatch_logs_exports = var.enabled_cloudwatch_logs_exports
+  deletion_protection             = var.deletion_protection
+}
+
+locals {
+  cluster_dns_name = var.cluster_dns_name != "" ? var.cluster_dns_name : local.module_prefix
+}
+
+module "dns_master" {
+  source  = "git::https://github.com/cloudposse/terraform-aws-route53-cluster-hostname.git?ref=tags/0.3.0"
+  enabled = var.create && length(var.zone_id) > 0 ? true : false
+  name    = local.cluster_dns_name
+  zone_id = var.zone_id
+  records = coalescelist(aws_rds_cluster.default.*.endpoint, [""])
 }
 
 # ----------------------------------------------------------------------------------------------------------------------
 # OUTPUTS
 # ----------------------------------------------------------------------------------------------------------------------
-output "db_instance_address" {
-  description = "The address of the RDS instance"
-  value       = module.db_instance.this_db_instance_address
+
+output "database_name" {
+  value       = var.db_name
+  description = "Database name"
 }
 
-output "db_instance_arn" {
-  description = "The ARN of the RDS instance"
-  value       = module.db_instance.this_db_instance_arn
+output "master_username" {
+  value       = join("", aws_rds_cluster.default.*.master_username)
+  description = "Username for the master DB user"
 }
 
-output "db_instance_availability_zone" {
-  description = "The availability zone of the RDS instance"
-  value       = module.db_instance.this_db_instance_availability_zone
+resource "aws_ssm_parameter" "aurora_sls_pg_username" {
+  count       = var.create && var.admin_user != "" ? 1 : 0
+  name        = "/${local.stage_prefix}/${var.name}-username"
+  description = format("%s %s", var.desc_prefix, "Username for the master DB user")
+  tags        = var.tags
+
+  type  = "String"
+  value = join("", aws_rds_cluster.default.*.master_username)
 }
 
-output "db_instance_endpoint" {
-  description = "The connection endpoint"
-  value       = module.db_instance.this_db_instance_endpoint
+resource "aws_ssm_parameter" "aurora_sls_pg_password" {
+  count       = var.create && var.admin_password != "" ? 1 : 0
+  name        = "/${local.stage_prefix}/${var.name}-password"
+  description = format("%s %s", var.desc_prefix, "Password for the master DB user")
+  tags        = var.tags
+
+  type  = "String"
+  value = var.admin_password
 }
 
-output "db_instance_hosted_zone_id" {
-  description = "The canonical hosted zone ID of the DB instance (to be used in a Route 53 Alias record)"
-  value       = module.db_instance.this_db_instance_hosted_zone_id
+output "cluster_identifier" {
+  value       = join("", aws_rds_cluster.default.*.cluster_identifier)
+  description = "Cluster Identifier"
 }
 
-output "db_instance_id" {
-  description = "The RDS instance ID"
-  value       = module.db_instance.this_db_instance_id
+output "arn" {
+  value       = join("", aws_rds_cluster.default.*.arn)
+  description = "Amazon Resource Name (ARN) of cluster"
 }
 
-output "db_instance_resource_id" {
-  description = "The RDS Resource ID of this instance"
-  value       = module.db_instance.this_db_instance_resource_id
+output "endpoint" {
+  value       = join("", aws_rds_cluster.default.*.endpoint)
+  description = "The DNS address of the RDS instance"
 }
 
-output "db_instance_status" {
-  description = "The RDS instance status"
-  value       = module.db_instance.this_db_instance_status
+resource "aws_ssm_parameter" "aurora_sls_pg_endpoint" {
+  count       = var.create ? 1 : 0
+  name        = "/${local.stage_prefix}/${var.name}-endpoint"
+  description = format("%s %s", var.desc_prefix, "The DNS address of the RDS instance")
+  tags        = var.tags
+
+  type  = "String"
+  value = join("", aws_rds_cluster.default.*.endpoint)
 }
 
-output "db_instance_name" {
-  description = "The database name"
-  value       = module.db_instance.this_db_instance_name
+output "reader_endpoint" {
+  value       = join("", aws_rds_cluster.default.*.reader_endpoint)
+  description = "A read-only endpoint for the Aurora cluster, automatically load-balanced across replicas"
 }
 
-# output "db_instance_username" {
-#   description = "The master username for the database"
-#   value       = module.db_instance.this_db_instance_username
-# }
-
-# output "db_instance_password" {
-#   description = "The database password (this password may be old, because Terraform doesn't track it after initial creation)"
-#   value       = var.password
-#   sensitive   = true
-# }
-
-output "db_instance_port" {
-  description = "The database port"
-  value       = module.db_instance.this_db_instance_port
+output "master_host" {
+  value       = module.dns_master.hostname
+  description = "DB Master hostname"
 }
 
-output "db_subnet_group_id" {
-  description = "The db subnet group name"
-  value       = module.db_subnet_group.this_db_subnet_group_id
+output "cluster_resource_id" {
+  value       = join("", aws_rds_cluster.default.*.cluster_resource_id)
+  description = "The region-unique, immutable identifie of the cluster"
 }
 
-output "db_subnet_group_arn" {
-  description = "The ARN of the db subnet group"
-  value       = module.db_subnet_group.this_db_subnet_group_arn
-}
-
-output "db_parameter_group_id" {
-  description = "The db parameter group id"
-  value       = module.db_parameter_group.this_db_parameter_group_id
-}
-
-output "db_parameter_group_arn" {
-  description = "The ARN of the db parameter group"
-  value       = module.db_parameter_group.this_db_parameter_group_arn
-}
-
-output "db_security_group_name" {
-  description = "The name of the db security group group"
-  value       = aws_security_group.this.*.name
+output "cluster_security_groups" {
+  value       = coalescelist(aws_rds_cluster.default.*.vpc_security_group_ids, [""])
+  description = "Default RDS cluster security groups"
 }

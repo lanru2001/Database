@@ -3,6 +3,10 @@
 # MODULES / RESOURCES
 # ----------------------------------------------------------------------------------------------------------------------
 
+data "aws_caller_identity" "current" {
+  count = var.account_id == "" ? 1 : 0
+}
+
 resource "aws_security_group" "default" {
   count       = var.create && var.allowed_cidr_blocks != [] ? 1 : 0
   name        = local.module_prefix

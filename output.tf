@@ -22,3 +22,14 @@ output "reader_endpoint" {
   value       = join("", aws_rds_cluster.default.*.reader_endpoint)
   description = "A read-only endpoint for the Aurora cluster, automatically load-balanced across replicas"
 }
+
+
+output "database_name" {
+  value       = var.db_name
+  description = "Database name"
+}
+
+output "master_username" {
+  value       = join("", aws_rds_cluster.default.*.master_username)
+  description = "Username for the master DB user"
+}

@@ -189,21 +189,6 @@ resource "aws_ssm_parameter" "aurora_sls_pg_password" {
   value = var.admin_password
 }
 
-output "cluster_identifier" {
-  value       = join("", aws_rds_cluster.default.*.cluster_identifier)
-  description = "Cluster Identifier"
-}
-
-output "arn" {
-  value       = join("", aws_rds_cluster.default.*.arn)
-  description = "Amazon Resource Name (ARN) of cluster"
-}
-
-output "endpoint" {
-  value       = join("", aws_rds_cluster.default.*.endpoint)
-  description = "The DNS address of the RDS instance"
-}
-
 resource "aws_ssm_parameter" "aurora_sls_pg_endpoint" {
   count       = var.create ? 1 : 0
   name        = "/${local.stage_prefix}/${var.name}-endpoint"

@@ -33,3 +33,18 @@ output "master_username" {
   value       = join("", aws_rds_cluster.default.*.master_username)
   description = "Username for the master DB user"
 }
+
+output "cluster_identifier" {
+  value       = join("", aws_rds_cluster.default.*.cluster_identifier)
+  description = "Cluster Identifier"
+}
+
+output "arn" {
+  value       = join("", aws_rds_cluster.default.*.arn)
+  description = "Amazon Resource Name (ARN) of cluster"
+}
+
+output "endpoint" {
+  value       = join("", aws_rds_cluster.default.*.endpoint)
+  description = "The DNS address of the RDS instance"
+}

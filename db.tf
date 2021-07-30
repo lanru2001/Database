@@ -169,16 +169,6 @@ module "dns_master" {
 # OUTPUTS
 # ----------------------------------------------------------------------------------------------------------------------
 
-output "database_name" {
-  value       = var.db_name
-  description = "Database name"
-}
-
-output "master_username" {
-  value       = join("", aws_rds_cluster.default.*.master_username)
-  description = "Username for the master DB user"
-}
-
 resource "aws_ssm_parameter" "aurora_sls_pg_username" {
   count       = var.create && var.admin_user != "" ? 1 : 0
   name        = "/${local.stage_prefix}/${var.name}-username"

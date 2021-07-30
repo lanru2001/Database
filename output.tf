@@ -17,3 +17,8 @@ output "cluster_security_groups" {
   value       = coalescelist(aws_rds_cluster.default.*.vpc_security_group_ids, [""])
   description = "Default RDS cluster security groups"
 }
+
+output "reader_endpoint" {
+  value       = join("", aws_rds_cluster.default.*.reader_endpoint)
+  description = "A read-only endpoint for the Aurora cluster, automatically load-balanced across replicas"
+}

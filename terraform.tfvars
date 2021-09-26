@@ -1,5 +1,5 @@
 
-account_id                = "216147165517"
+account_id                = "873079457075"
 public_subnets_cidr       = [ "10.0.4.0/24", "10.0.5.0/24" ]
 private_subnets_cidr      = [ "10.0.7.0/24", "10.0.8.0/24" ]
 vpc_cidr                  = "10.0.0.0/16"
@@ -16,13 +16,13 @@ cloudwatch_log_stream     = "ecs"
 name_prefix               = "uc-db"
 #vpc_security_group_ids   = ""
 db_name                   = "eks_db"
-db_instance_port          = 3306
-username                  = "mysqladmin" 
+db_instance_port          = 5432
+username                  = "postsqladmin" 
 password                  = "dynamicit"  # Store password in parameter store 
-family                    = "mysql5.7"
+family                    = "postgresql11.9"
 private_subnet_id         = "subnet-0c6700f2915010226" 
-engine                    = "mysql"
-engine_version            = "5.7.26"
+engine                    = "aurora postgresql"
+engine_version            = "11.9"
 instance_class            = "db.t2.micro"
 #db_subnet_group_name      = "subnet-097c6f21a3fc9e20a"     # "subnet-0c6700f2915010226" # "subnet-05731ba59cb081e63"]
 tag                       = "eks-dev"
